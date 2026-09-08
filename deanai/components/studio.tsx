@@ -1,0 +1,218 @@
+"use client";
+
+import { useEffect } from "react";
+import { Loader2, PanelLeftOpen, Images, Sparkles } from "lucide-react";
+import { useStore } from "@/lib/store";
+import { SiteHeader } from "./site-header";
+import { ConnectModal } from "./connect-modal";
+import { SettingsSidebar } from "./sidebar/settings-sidebar";
+import { Canvas } from "./canvas/canvas";
+import { RecipeDropzone } from "./canvas/recipe-dropzone";
+import { Lightbox } from "./canvas/lightbox";
+import { DirectorModal } from "./canvas/director-modal";
+import { GalleryPanel } from "./gallery/gallery-panel";
+import { CommandPalette } from "./command-palette";
+import { IconButton } from "./ui/icon-button";
+import { ProgressRing } from "./ui/progress-ring";
+import { cn } from "@/lib/utils";
+
+export function Studio() {
+  const init = useStore((s) => s.init);
+  const collapsed = useStore((s) => s.settingsCollapsed);
+  const galleryOpen = useStore((s) => s.galleryOpen);
+  const imageCount = useStore((s) => s.images.length);
+  const galleryStatus = useStore((s) => s.galleryStatus);
+  const setUI = useStore((s) => s.setUI);
+  const generate = useStore((s) => s.generate);
+  const isGenerating = useStore((s) => s.isGenerating);
+  const canCancelGeneration = useStore((s) => s.canCancelGeneration);
+  const streaming = useStore((s) => s.streamingBatch);
+  const nSamples = useStore((s) => s.settings.nSamples);
+
+  useEffect(() => {
+    void init();
+  }, [init]);
+
+  // Global accelerators. Cmd/Ctrl+Enter is the commit gesture from anywhere — without it the only
+  // way to generate is a mouse round-trip to the sidebar button.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const s = useStore.getState();
+      if (s.showConnect || s.showDirector || s.focusedIndex !== null) return;
+
+      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        if (!s.isGenerating) void s.generate();
+        return;
+      }
+      // Rail toggles — skip while typing, or they'd swallow the brackets.
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+      const compact = window.matchMedia("(max-width: 1279px)").matches;
+      if (e.key === "Escape" && compact && (!s.settingsCollapsed || s.galleryOpen)) {
+        s.setUI({ settingsCollapsed: true, galleryOpen: false });
+      }
+      if (e.key === "[") {
+        s.setUI({ settingsCollapsed: !s.settingsCollapsed, ...(compact ? { galleryOpen: false } : {}) });
+      }
+      if (e.key === "]") {
+        s.setUI({ galleryOpen: !s.galleryOpen, ...(compact ? { settingsCollapsed: true } : {}) });
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  const meanProgress = streaming?.length
+    ? streaming.reduce((a, t) => a + t.progress, 0) / streaming.length
+    : 0;
+
+  return (
+    <div className="flex h-dvh flex-col overflow-hidden">
+      <SiteHeader />
+      <main className="relative flex min-h-0 flex-1 isolate">
+        {/* Compact layouts promote the canvas to the primary surface and turn both dense panels
+            into drawers. One shared scrim keeps the relationship obvious and gives pointer users
+            a generous close target. Wide screens retain the always-visible workstation. */}
+        <button
+          type="button"
+          inert={collapsed && !galleryOpen}
+          tabIndex={!collapsed || galleryOpen ? 0 : -1}
+          aria-hidden={collapsed && !galleryOpen}
+          aria-label="关闭当前面板"
+          onClick={() => setUI({ settingsCollapsed: true, galleryOpen: false })}
+          className={cn(
+            "fixed bottom-0 right-0 top-14 z-20 bg-black/45 backdrop-blur-[2px] transition-opacity duration-fast xl:hidden",
+            process.env.NEXT_PUBLIC_LOCAL_DESKTOP === "1" ? "left-16" : "left-0",
+            !collapsed || galleryOpen ? "opacity-100" : "pointer-events-none opacity-0",
+          )}
+        />
+
+        {/* One element that tweens its width — collapsing used to swap two DOM subtrees, teleporting
+            316px of layout in a single frame. */}
+        <aside
+          className={cn(
+            "fixed bottom-0 top-14 z-30 w-[min(360px,calc(100vw-2rem))] shrink-0 overflow-hidden border-r border-border-soft bg-surface shadow-[var(--shadow-panel)]",
+            process.env.NEXT_PUBLIC_LOCAL_DESKTOP === "1" ? "left-16" : "left-0",
+            "transition-transform duration-slow ease-standard xl:relative xl:inset-auto xl:z-10 xl:shadow-[6px_0_30px_-20px_rgba(0,0,0,0.6)] xl:transition-[width]",
+            collapsed ? "-translate-x-full xl:w-11 xl:translate-x-0" : "translate-x-0 xl:w-[360px]",
+          )}
+        >
+          {/* Rail: keeps the primary action instead of amputating it. */}
+          {/* `inert` both hides this from AT and removes it from the tab order. It used to be
+              aria-hidden only, so a keyboard user tabbed through invisible controls — and
+              aria-hidden over a focusable element is itself an ARIA violation. */}
+          <div
+            inert={!collapsed}
+            className={cn(
+              "absolute inset-y-0 left-0 hidden w-11 flex-col items-center gap-2 py-3 transition-opacity duration-fast xl:flex",
+              collapsed ? "opacity-100" : "pointer-events-none opacity-0",
+            )}
+          >
+            <IconButton
+              label="展开生图设置"
+              title="展开生图设置 — ["
+              onClick={() => setUI({ settingsCollapsed: false })}
+              size="sm"
+            >
+              <PanelLeftOpen />
+            </IconButton>
+            {isGenerating ? (
+              canCancelGeneration ? (
+                <ProgressRing progress={meanProgress} size={32} stroke={2.5} />
+              ) : (
+                <span className="flex size-8 items-center justify-center text-accent" title="正在生成 V3 最终图片">
+                  <Loader2 className="motion-keep size-4 animate-spin" />
+                </span>
+              )
+            ) : (
+              <IconButton
+                label="生成"
+                // NOTE: no prompt preview here. Subscribing to settings.prompt meant every
+                // keystroke re-rendered the entire Studio tree (Canvas, Gallery, Sidebar).
+                title={`生成${nSamples > 1 ? ` · ${nSamples} 张` : ""} — Ctrl+Enter`}
+                onClick={() => void generate()}
+                variant="accent"
+              >
+                <Sparkles />
+              </IconButton>
+            )}
+          </div>
+
+          {/* Fixed-width inner wrapper so the sidebar's own layout doesn't squash during the tween. */}
+          <div
+            inert={collapsed}
+            className={cn(
+              "h-full w-full transition-opacity duration-fast xl:w-[360px]",
+              collapsed ? "pointer-events-none opacity-0" : "opacity-100",
+            )}
+          >
+            <SettingsSidebar />
+          </div>
+        </aside>
+
+        <section className="relative z-0 min-w-0 flex-1 bg-bg" aria-busy={isGenerating}>
+          <Canvas />
+          {/* Listens on window, draws here — a recipe PNG can be dropped anywhere in the studio,
+              but the invitation appears over the stage. */}
+          <RecipeDropzone />
+        </section>
+
+        <aside
+          className={cn(
+            "fixed bottom-0 right-0 top-14 z-30 w-[min(320px,calc(100vw-2rem))] shrink-0 overflow-hidden border-l border-border-soft bg-surface shadow-[var(--shadow-panel)]",
+            "transition-transform duration-slow ease-standard xl:relative xl:inset-auto xl:z-10 xl:shadow-[-6px_0_30px_-20px_rgba(0,0,0,0.6)] xl:transition-[width]",
+            galleryOpen ? "translate-x-0 xl:w-[320px]" : "translate-x-full xl:w-11 xl:translate-x-0",
+          )}
+        >
+          <div
+            inert={galleryOpen}
+            className={cn(
+              "absolute inset-y-0 left-0 hidden w-11 flex-col items-center py-3 transition-opacity duration-fast xl:flex",
+              galleryOpen ? "pointer-events-none opacity-0" : "opacity-100",
+            )}
+          >
+            <IconButton
+              label="打开生图历史"
+              title="打开生图历史 — ]"
+              onClick={() => setUI({ galleryOpen: true })}
+              size="sm"
+              className="relative"
+            >
+              <Images />
+              {galleryStatus === "ready" && imageCount > 0 && (
+                <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 font-[family-name:var(--font-mono)] text-[10px] font-bold text-on-accent">
+                  {imageCount > 99 ? "99+" : imageCount}
+                </span>
+              )}
+            </IconButton>
+          </div>
+
+          <div
+            inert={!galleryOpen}
+            className={cn(
+              "h-full w-full transition-opacity duration-fast xl:w-[320px]",
+              galleryOpen ? "opacity-100" : "pointer-events-none opacity-0",
+            )}
+          >
+            <GalleryPanel />
+          </div>
+        </aside>
+      </main>
+
+      {/* Progress is otherwise silent for screen-reader users for the whole run. */}
+      <div role="status" aria-live="polite" aria-atomic className="sr-only">
+        {isGenerating
+          ? canCancelGeneration
+            ? `Generating ${streaming?.length ?? 0} images, ${Math.round(meanProgress * 100)} percent`
+            : `Generating ${streaming?.length ?? 0} V3 final images`
+          : ""}
+      </div>
+
+      <ConnectModal />
+      <DirectorModal />
+      <Lightbox />
+      <CommandPalette />
+    </div>
+  );
+}

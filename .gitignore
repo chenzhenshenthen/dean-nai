@@ -1,0 +1,80 @@
+# Local repository migration and editor state
+.git-backups/
+.vscode/
+.idea/
+.DS_Store
+
+# Secrets and machine-local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pfx
+*.p12
+*.jks
+*.keystore
+local.properties
+.public-release/
+
+# Runtime logs and archives
+logs/
+.runtime/
+*.log
+*.rar
+*.7z
+*.zip
+desktop-build/
+desktop-dist/
+release-dist/
+.desktop-webview/
+NyaLocal.exe
+dean-nai.exe
+reference/
+tags/
+
+# Personal source documents
+*.docx
+/场景提示词库-*.md
+/nai_hot_characters_*.md
+
+# Internal development notes; only the small AI navigation map is public
+/docs/*
+!/docs/development-map.md
+
+# deanai dependencies and generated output
+deanai/node_modules/
+deanai/.next/
+deanai/.pwa-stage/
+deanai/pwa-dist/
+deanai/.desktop-stage/
+deanai/.desktop-test-dist/
+deanai/desktop-web-dist/
+deanai/out/
+deanai/dist/
+deanai/coverage/
+deanai/*.tsbuildinfo
+deanai/.cache/
+deanai/.eslintcache
+deanai/.npmrc
+
+# Prompt-library databases, media and generated backups
+nai-artist-library/__pycache__/
+nai-artist-library/tests/__pycache__/
+nai-artist-library/**/*.py[cod]
+nai-artist-library/data/
+nai-artist-library/backups/
+nai-artist-library/logs/
+nai-artist-library/output/
+nai-artist-library/*.db
+nai-artist-library/*.db-shm
+nai-artist-library/*.db-wal
+
+# OS and temporary files
+**/__pycache__/
+**/*.py[cod]
+Thumbs.db
+Desktop.ini
+*.tmp
+*.bak
+*~

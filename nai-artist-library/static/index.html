@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script>
+    if (location.pathname.startsWith("/library-embed")) document.documentElement.classList.add("library-embed");
+  </script>
+  <title>dean-nai 资料库</title>
+  <link rel="stylesheet" href="/static/styles.css?v=2026.09.06.1">
+  <link rel="stylesheet" href="/static/converter.css?v=2026.08.31.1">
+</head>
+<body>
+  <nav class="global-app-nav" aria-label="dean-nai 主导航">
+    <a href="/" class="global-nav-brand" title="dean-nai">D</a>
+    <a href="/" title="生图" aria-label="生图">✦</a>
+    <a href="/local-gallery/" title="本地画廊" aria-label="本地画廊">▣</a>
+    <a href="/online-gallery/" title="在线画廊" aria-label="在线画廊">⌕</a>
+    <a href="/library" class="active" title="资料库" aria-label="资料库">▤</a>
+    <a href="/stats/" title="统计" aria-label="统计">▥</a>
+    <a href="/settings/" title="设置" aria-label="设置">⌁</a>
+  </nav>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div id="sidebar-layout-toolbar" class="sidebar-layout-toolbar" title="浮动模式下可拖动目录面板">
+        <span class="sidebar-drag-handle">目录面板</span>
+        <select id="sidebar-dock" aria-label="目录面板位置" title="目录面板位置">
+          <option value="left">左侧</option>
+          <option value="right">右侧</option>
+          <option value="top">上侧</option>
+          <option value="bottom">下侧</option>
+          <option value="floating">自由移动</option>
+        </select>
+        <button id="sidebar-collapse" type="button" title="折叠目录面板">收起</button>
+      </div>
+      <section id="rating-section" class="side-section" hidden>
+        <div class="side-heading">画师串分类预演</div>
+        <select id="artist-classification-view" aria-label="画师串分类层级">
+          <option value="rating-first">评分 → 风格</option>
+          <option value="style-first">风格 → 评分</option>
+        </select>
+        <div id="artist-filter-stack">
+          <div id="rating-filter-panel" class="artist-filter-panel">
+            <div class="artist-filter-label">评分</div>
+            <details class="rating-multiselect"><summary id="artist-rating-summary">全部评分（多选）</summary><div id="artist-rating-filter" aria-label="按评分筛选"></div></details>
+          </div>
+          <div id="style-filter-panel" class="artist-filter-panel">
+            <div class="artist-filter-label">风格</div>
+            <select id="artist-style-filter" aria-label="按风格筛选"></select>
+          </div>
+        </div>
+      </section>
+
+      <section class="side-section categories-section">
+        <div class="directory-toolbar">
+          <div id="directory-heading" class="side-heading">画师串目录</div>
+          <button id="add-category" type="button" title="新增目录">＋</button>
+          <button id="rename-category" type="button" title="改名或移动当前目录">✎</button>
+          <button id="delete-category" type="button" title="删除当前目录">−</button>
+        </div>
+        <div id="category-list"></div>
+      </section>
+
+      <section class="side-section groups-section">
+        <div class="directory-toolbar">
+          <div class="side-heading">自定义分组</div>
+          <button id="add-group" type="button" title="新增分组">＋</button>
+          <button id="rename-group" type="button" title="重命名当前分组">✎</button>
+          <button id="delete-group" type="button" title="删除当前分组">−</button>
+        </div>
+        <div id="group-list"></div>
+      </section>
+
+      <div class="sidebar-footer">
+        <div><span id="privacy-dot"></span> 数据仅保存在这台电脑</div>
+      </div>
+      <div id="sidebar-resizer" class="sidebar-resizer" aria-hidden="true"></div>
+    </aside>
+
+    <main class="workspace">
+      <header class="topbar">
+        <div class="library-switch">
+          <button id="library-menu-toggle" class="top-icon menu-icon" type="button" title="切换画师串库或场景提示词库" aria-expanded="false">☰</button>
+          <nav id="library-menu" class="library-menu" aria-label="资料库切换" hidden>
+            <button class="module-button" data-kind="artist"><span>画师串库</span><b id="artist-count">0</b></button>
+            <button class="module-button active" data-kind="prompt"><span>场景提示词库</span><b id="prompt-count">0</b></button>
+          </nav>
+        </div>
+        <div id="search-box" class="search-box">
+          <span aria-hidden="true">⌕</span>
+          <input id="search" type="search" placeholder="搜索标题、画师串、中文说明或英文 tag…" autocomplete="off">
+          <kbd id="search-shortcut-hint">Ctrl K</kbd>
+          <button id="search-scope" class="search-scope-button" type="button" title="当前为全场景搜索；点击切换为当前目录">全场景</button>
+          <div id="search-field-control" class="search-field-control">
+            <select id="search-field" class="search-field-native" aria-label="全库搜索字段">
+              <option value="all">全部字段</option>
+              <option value="title">标题</option>
+              <option value="content">正向词</option>
+              <option value="negative">负向词</option>
+              <option value="tags">标签</option>
+              <option value="path">路径</option>
+            </select>
+            <button id="search-field-toggle" class="search-field-toggle" type="button" title="搜索字段：全部字段" aria-label="选择搜索字段" aria-expanded="false">⌄</button>
+            <div id="search-field-menu" class="search-field-menu" hidden>
+              <button type="button" class="active" data-search-field="all">全部字段</button>
+              <button type="button" data-search-field="title">标题</button>
+              <button type="button" data-search-field="content">正向词</button>
+              <button type="button" data-search-field="negative">负向词</button>
+              <button type="button" data-search-field="tags">标签</button>
+              <button type="button" data-search-field="path">路径</button>
+            </div>
+          </div>
+          <button id="search-submit" class="search-submit-button" type="button" title="搜索" aria-label="搜索">&#8981;</button>
+        </div>
+        <select id="sort" aria-label="排序">
+          <option value="rating_desc">评分从高到低</option>
+          <option value="rating_asc">评分从低到高</option>
+          <option value="newest">最近更新</option>
+          <option value="created_desc">创建时间：新到旧</option>
+          <option value="title">标题排序</option>
+          <option value="manual">自定义排序</option>
+          <option value="usage_desc">使用次数</option>
+        </select>
+        <div class="top-icons">
+          <button id="desktop-fullscreen" class="top-icon" type="button" title="切换全屏" aria-label="切换全屏" hidden>⛶</button>
+          <div id="utility-menu-control" class="utility-menu-control">
+            <button id="utility-menu-toggle" class="top-icon utility-menu-toggle" type="button" title="收藏、筛选与显示工具" aria-label="打开更多工具" aria-expanded="false">⋯</button>
+            <div id="utility-menu" class="utility-menu" hidden>
+              <button id="favorite-filter" class="utility-menu-item" type="button" title="仅查看收藏" aria-label="仅查看收藏">
+                <span id="favorite-icon" class="utility-menu-icon">♡</span><span>仅查看收藏</span><b id="favorite-count" hidden>0</b>
+              </button>
+              <div id="image-filter-control" class="image-filter-control utility-submenu-control">
+                <button id="image-filter-toggle" class="utility-menu-item" type="button" title="筛选有图或无图卡片" aria-label="图片筛选" aria-expanded="false">
+                  <span id="image-filter-icon" class="utility-menu-icon">▧</span><span>图片筛选</span><small id="image-filter-value">全部</small><em>›</em>
+                </button>
+                <div id="image-filter-menu" class="image-filter-menu utility-submenu" hidden>
+                  <button type="button" class="active" data-image-filter=""><span>全部卡片</span><b id="images-all-count">0</b></button>
+                  <button type="button" data-image-filter="with"><span>有图卡片</span><b id="images-with-count">0</b></button>
+                  <button type="button" data-image-filter="without"><span>无图卡片</span><b id="images-without-count">0</b></button>
+                </div>
+              </div>
+              <button id="copy-history-toggle" class="utility-menu-item" type="button" title="最近复制的 Prompt" aria-label="查看最近复制的 Prompt">
+                <span class="utility-menu-icon">▣</span><span>最近复制</span>
+              </button>
+              <button id="theme-toggle" class="utility-menu-item" type="button" title="切换浅色/深色主题" aria-label="切换浅色或深色主题">
+                <span id="theme-icon" class="utility-menu-icon">☀</span><span id="theme-label">切换浅色主题</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        <button id="open-export" class="secondary-button">导出 / 备份</button>
+        <button id="batch-mode" class="secondary-button">批量管理</button>
+        <button id="add-entry" class="primary-button">＋ 新建资料</button>
+      </header>
+
+      <section class="content-header">
+        <div>
+          <p class="eyebrow" id="section-eyebrow">SCENE PROMPTS</p>
+          <h1 id="section-title">场景提示词库</h1>
+          <p id="result-summary">正在载入资料…</p>
+        </div>
+        <aside class="view-controls" aria-label="卡片布局">
+          <div class="view-mode-options" role="group" aria-label="展示方式">
+            <button type="button" class="active" data-view-mode="card" title="显示完整图片的卡片布局">图片卡片</button>
+            <button type="button" data-view-mode="list" title="左侧小图、右侧资料内容">列表</button>
+            <button type="button" data-view-mode="text" title="隐藏图片并使用相同高度的卡片">无图卡片</button>
+          </div>
+          <div id="view-column-options" class="view-column-options" role="group" aria-label="每行卡片数量">
+            <span>每行</span>
+            <button type="button" class="active" data-view-columns="3">3</button>
+            <button type="button" data-view-columns="4">4</button>
+            <button type="button" data-view-columns="5">5</button>
+          </div>
+        </aside>
+      </section>
+
+      <nav id="category-chips" class="category-chips" aria-label="一级目录快速切换"></nav>
+      <nav id="category-breadcrumb" class="category-breadcrumb" aria-label="当前目录路径"></nav>
+      <div id="active-filter" class="active-filter" hidden></div>
+      <div id="batch-toolbar" class="batch-toolbar" hidden>
+        <strong>已选择 <span id="selected-count">0</span> 条</strong>
+        <span>删除资料会清理不再被引用的原图副本；外部关联文件保留。</span>
+        <button id="select-all" type="button">全选当前结果</button>
+        <button id="clear-selection" type="button">清空选择</button>
+        <button id="move-selected" type="button">移动已选</button>
+        <button id="cancel-batch" type="button">取消</button>
+        <button id="delete-selected" type="button" class="danger-button">删除已选</button>
+      </div>
+      <section id="gallery" class="gallery view-card columns-3" aria-live="polite"></section>
+      <div id="load-more-sentinel" class="load-more-sentinel"><span id="load-more-text">继续向下滚动加载</span></div>
+      <section id="empty-state" class="empty-state" hidden>
+        <div>⌕</div><h2>没有找到资料</h2><p>换一个关键词或清除筛选条件试试。</p>
+      </section>
+    </main>
+  </div>
+  <button id="sidebar-reopen" class="sidebar-reopen" type="button" title="展开目录面板">☰ 目录</button>
+
+  <div id="toast" class="toast" role="status"></div>
+  <nav class="page-jump" aria-label="页面快速跳转">
+    <button id="scroll-top" type="button" title="回到顶部">↑</button>
+    <button id="random-scene" type="button" title="随机定位一个场景提示词">⤨</button>
+    <button id="scroll-bottom" type="button" title="回到底部">↓</button>
+  </nav>
+
+  <dialog id="export-dialog" class="export-dialog">
+    <header><div><p class="eyebrow">DATA SAFETY</p><h2>导出与备份</h2></div><button type="button" class="icon-button close-export">×</button></header>
+    <section class="export-option">
+      <div><strong>完整 JSON</strong><p>导出全部资料、评分、收藏、提示词和图片路径，可脱离本程序阅读。</p></div>
+      <a class="primary-button export-link" data-native-export href="/api/export/json">下载 JSON</a>
+    </section>
+    <section class="export-option">
+      <div><strong>当前结果 Markdown</strong><p>导出当前资料库及现有搜索、目录、评分和收藏筛选下的卡片。</p></div>
+      <button id="export-current" class="secondary-button" type="button">下载 Markdown</button>
+    </section>
+    <section class="export-option">
+      <div><strong>画师串评分表</strong><p>导出全部画师串、评分、收藏、提示词和图片数量，可直接用 WPS/Excel 打开。</p></div>
+      <a class="secondary-button export-link" data-native-export href="/api/export/artists.csv">下载 CSV</a>
+    </section>
+    <section class="export-option">
+      <div><strong>完整本地备份</strong><p>在 backups 文件夹生成 ZIP，包含数据库、data/media 图片、缩略图和外部原图副本。</p></div>
+      <button id="create-backup" class="secondary-button" type="button">创建备份</button>
+    </section>
+    <details id="library-maintenance" class="integrated-converter">
+      <summary><strong>图片检查与空间清理</strong><span>原图、预览图及卡片关联检查</span></summary>
+      <p class="integrated-converter-intro">删除示例图或卡片后，会自动清理无人引用的原图副本和缩略图。共享图片在最后一个引用删除后清理；关联文件夹中的外部原文件始终保留。清理为永久删除，历史备份不受影响。</p>
+      <div class="maintenance-actions">
+        <label><input id="maintenance-deep" type="checkbox">深度读取隐写参数（较慢）</label>
+        <label><input id="maintenance-full" type="checkbox">忽略检查缓存</label>
+        <button id="maintenance-audit" class="secondary-button maintenance-action" type="button">检查图片与提示词</button>
+        <button id="maintenance-preview" class="secondary-button maintenance-action" type="button">检查可清理副本</button>
+        <button id="maintenance-cleanup" class="danger-button maintenance-action" type="button" disabled>清理预览中的副本</button>
+      </div>
+      <p id="maintenance-status" role="status">尚未检查。可清理副本包括旧版遗留的无引用图片；不会清空正在使用的示例图。</p>
+      <progress id="maintenance-progress" max="1" value="0" hidden></progress>
+      <div id="maintenance-preview-result" hidden></div>
+      <div id="maintenance-audit-result" hidden>
+        <p id="maintenance-summary"></p>
+        <div class="maintenance-actions">
+          <select id="maintenance-filter" aria-label="选择检查问题类型"></select>
+          <button id="maintenance-json" class="secondary-button" type="button">导出 JSON 报告</button>
+          <button id="maintenance-markdown" class="secondary-button" type="button">导出 Markdown 报告</button>
+        </div>
+        <p>提示词不匹配和角色词遗漏是疑似问题，仅供人工核对，不会自动修改卡片或删除图片。</p>
+        <div id="maintenance-results"></div>
+        <div class="maintenance-actions"><button id="maintenance-prev" class="secondary-button" type="button">上一页</button><span id="maintenance-page"></span><button id="maintenance-next" class="secondary-button" type="button">下一页</button></div>
+      </div>
+    </details>
+    <details class="integrated-converter">
+      <summary><strong>DOCX / Markdown 增量更新</strong><span>在这里展开并更新资料库</span></summary>
+      <p class="integrated-converter-intro">场景与画师串分开处理。先预览分类、新增、修改、改名和删除；确认应用前会再次核对文件，并自动备份当前数据库。</p>
+      <div class="update-columns">
+        <section class="update-panel" data-kind="prompt">
+          <header><div><p class="eyebrow">SCENE PROMPTS</p><h2>更新场景提示词</h2></div><span>只影响场景库</span></header>
+          <label class="document-picker">选择场景 DOCX / Markdown
+            <input class="document-input" type="file" accept=".docx,.md,.markdown,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/markdown">
+          </label>
+          <label class="delete-option"><input class="delete-missing" type="checkbox"><span><strong>同步删除文件中未出现的场景</strong><small>默认关闭；开启后预览中会明确列出将删除的卡片。</small></span></label>
+          <div class="panel-actions"><button class="preview-button primary-button" type="button">预览场景变化</button><button class="apply-button danger-button" type="button" disabled>确认应用</button></div>
+          <p class="panel-status">尚未选择文件。</p><div class="preview-result" hidden></div>
+        </section>
+        <section class="update-panel" data-kind="artist">
+          <header><div><p class="eyebrow">ARTIST STRINGS</p><h2>更新画师串</h2></div><span>只影响画师串库</span></header>
+          <label class="document-picker">选择画师串 DOCX / Markdown
+            <input class="document-input" type="file" accept=".docx,.md,.markdown,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/markdown">
+          </label>
+          <label class="delete-option"><input class="delete-missing" type="checkbox"><span><strong>同步删除文件中未出现的画师串</strong><small>不会把“负面提示词”子目录当成缺失资料。</small></span></label>
+          <div class="panel-actions"><button class="preview-button primary-button" type="button">预览画师串变化</button><button class="apply-button danger-button" type="button" disabled>确认应用</button></div>
+          <p class="panel-status">尚未选择文件。</p><div class="preview-result" hidden></div>
+        </section>
+      </div>
+    </details>
+    <p id="backup-result" class="backup-result" hidden></p>
+  </dialog>
+
+  <dialog id="copy-history-dialog" class="copy-history-dialog">
+    <header>
+      <div><p class="eyebrow">PROMPT CLIPBOARD</p><h2>最近复制</h2></div>
+      <button type="button" class="icon-button close-copy-history">×</button>
+    </header>
+    <p class="copy-history-note">场景和画师串共用这份本地记录；只保存在当前浏览器。</p>
+    <div id="copy-history-list" class="copy-history-list"></div>
+    <footer>
+      <button id="clear-copy-history" type="button" class="secondary-button">清空记录</button>
+      <button type="button" class="primary-button close-copy-history">关闭</button>
+    </footer>
+  </dialog>
+
+  <dialog id="edit-dialog" class="edit-dialog">
+    <form id="entry-form" method="dialog">
+      <header><div><p class="eyebrow">LOCAL RECORD</p><h2 id="dialog-title">新建资料</h2></div><button type="button" class="icon-button close-dialog">×</button></header>
+      <input id="entry-id" type="hidden">
+      <label>标题<input id="entry-title" required maxlength="120" placeholder="给这条资料一个容易搜索的名称"></label>
+      <div class="form-row">
+        <label>类型<select id="entry-kind"><option value="artist">画师串</option><option value="prompt">场景提示词</option></select></label>
+        <label id="rating-field">评分<select id="entry-rating"><option value="">未评分</option></select></label>
+      </div>
+      <label id="style-field">风格<input id="entry-style" maxlength="80" list="artist-style-suggestions" placeholder="暂未分类；可自由填写新风格"><datalist id="artist-style-suggestions"></datalist></label>
+      <label id="reveal-after-save-field" class="inline-check"><input id="reveal-after-save" type="checkbox">保存后定位到卡片的新位置</label>
+      <label>目录
+        <input id="entry-category" type="hidden">
+        <div id="entry-category-picker" class="category-picker"></div>
+        <small>从左到右逐级选择；需要新目录时先在侧栏创建。</small>
+      </label>
+      <label><span id="content-label">画师串 / 正向提示词</span><textarea id="entry-content" rows="7"></textarea></label>
+      <label>负向提示词<textarea id="entry-negative" rows="4"></textarea></label>
+      <label>标签<input id="entry-tags" placeholder="多个标签用英文逗号分隔"></label>
+      <label>自定义分组
+        <select id="entry-groups" multiple size="4"></select>
+        <small>按住 Ctrl 可以选择多个分组；分组与一、二级目录彼此独立。</small>
+      </label>
+      <label class="upload-field">添加示例图片
+        <input id="entry-images" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple>
+        <small>可一次选择多张；同一图片用于不同资料时会按哈希复用，不会重复占用空间。</small>
+      </label>
+      <label class="upload-field">关联本地图片文件夹（可选）
+        <input id="entry-folder" type="text" placeholder="例如 待整理/某组图片（相对于 data/media）">
+        <small>图片根目录：<span id="originals-path">正在读取…</span><br>可填写其中的子目录名或完整路径。保存时只建立本地链接并在后台生成缩略图，不复制或移动原图。</small>
+      </label>
+      <footer>
+        <button id="delete-entry" type="button" class="danger-button" hidden>删除资料</button>
+        <span></span>
+        <button type="button" class="secondary-button close-dialog">取消</button>
+        <button type="submit" class="primary-button">保存</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <dialog id="batch-move-dialog" class="edit-dialog batch-move-dialog">
+    <form id="batch-move-form" method="dialog">
+      <header><div><p class="eyebrow">BATCH MOVE</p><h2>批量移动资料</h2></div><button type="button" class="icon-button close-batch-move">×</button></header>
+      <p>将选中的 <strong id="batch-move-count">0</strong> 条资料移动到：</p>
+      <label>目标目录
+        <input id="batch-move-category" type="hidden">
+        <div id="batch-move-category-picker" class="category-picker"></div>
+        <small>从左到右逐级选择，移动不会影响图片、评分、收藏和自定义分组。</small>
+      </label>
+      <footer>
+        <span></span>
+        <button type="button" class="secondary-button close-batch-move">取消</button>
+        <button type="submit" class="primary-button">确认移动</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <dialog id="image-dialog" class="image-dialog">
+    <button type="button" class="image-close">×</button>
+    <section class="viewer-stage">
+      <button type="button" class="image-nav previous" aria-label="上一张">‹</button>
+      <img id="full-image" alt="原图">
+      <button type="button" class="image-nav next" aria-label="下一张">›</button>
+    </section>
+    <aside class="viewer-details">
+      <h2 id="viewer-title"></h2>
+      <p id="viewer-meta"></p>
+      <div class="viewer-actions">
+        <button id="viewer-favorite" type="button">♡ 收藏</button>
+        <button id="viewer-copy" type="button">复制正向</button>
+        <a id="viewer-original" target="_blank" rel="noopener">查看原图</a>
+        <button id="viewer-set-cover" type="button" title="将当前图片设为卡片上展示的示例图">设为卡片封面</button>
+        <button id="viewer-delete-image" type="button" class="viewer-danger" title="从当前资料中移除这张示例图片">删除这张图片</button>
+      </div>
+      <div class="prompt-section">
+        <header><strong>正向提示词</strong><button id="copy-positive" type="button">复制正向</button></header>
+        <pre id="viewer-positive"></pre>
+      </div>
+      <div id="viewer-negative-section" class="prompt-section negative-section">
+        <header><strong>负面提示词</strong><button id="copy-negative" type="button">复制负面</button></header>
+        <pre id="viewer-negative"></pre>
+      </div>
+      <section id="viewer-embedded-section" class="embedded-metadata" hidden>
+        <header>
+          <div><strong>原图内嵌信息</strong><small id="viewer-embedded-source"></small></div>
+          <button id="viewer-read-deep" type="button" title="仅在普通读取没有结果时，深度检查 PNG Alpha 隐写参数">深度读取</button>
+        </header>
+        <div id="viewer-embedded-positive-section" class="prompt-section" hidden>
+          <header><strong>图片正向提示词</strong><button id="copy-embedded-positive" type="button">复制</button></header>
+          <pre id="viewer-embedded-positive"></pre>
+        </div>
+        <div id="viewer-embedded-negative-section" class="prompt-section negative-section" hidden>
+          <header><strong>图片负向提示词</strong><button id="copy-embedded-negative" type="button">复制</button></header>
+          <pre id="viewer-embedded-negative"></pre>
+        </div>
+        <div id="viewer-character-prompts" class="viewer-character-prompts"></div>
+        <dl id="viewer-generation-parameters" class="generation-parameters"></dl>
+        <p id="viewer-embedded-empty" class="embedded-empty" hidden>没有读到常规图片参数；如果图片由 NovelAI 生成但参数被隐藏，可以尝试“深度读取”。</p>
+      </section>
+      <div id="image-counter"></div>
+    </aside>
+  </dialog>
+
+  <script src="/static/app.js?v=2026.09.06.1"></script>
+  <script src="/static/converter.js?v=2026.09.06.1"></script>
+</body>
+</html>

@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DOCX / Markdown 增量更新 · NAI 资料库</title>
+  <link rel="stylesheet" href="/static/styles.css?v=2026.08.18.1">
+  <link rel="stylesheet" href="/static/converter.css?v=2026.08.29.1">
+</head>
+<body class="converter-page">
+  <header class="converter-topbar">
+    <div><p class="eyebrow">SAFE INCREMENTAL UPDATE</p><h1>DOCX / Markdown 增量更新</h1></div>
+    <a href="/">← 返回资料库</a>
+  </header>
+
+  <main class="converter-main">
+    <section class="converter-intro">
+      <strong>场景和画师串分别更新，互不影响。</strong>
+      <p>先选择本地 DOCX 或 Markdown 并预览。场景文件中的标题层级会同步为分类；旧版无分类 DOCX 会保留卡片现有分类。确认应用前会再次核对文件和数据库是否变化，并自动备份当前数据库。</p>
+    </section>
+
+    <div class="update-columns">
+      <section class="update-panel" data-kind="prompt">
+        <header><div><p class="eyebrow">SCENE PROMPTS</p><h2>更新场景提示词</h2></div><span>只影响场景库</span></header>
+        <label class="document-picker">选择场景 DOCX / Markdown
+          <input class="document-input" type="file" accept=".docx,.md,.markdown,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/markdown">
+        </label>
+        <label class="delete-option">
+          <input class="delete-missing" type="checkbox">
+          <span><strong>同步删除文件中未出现的场景</strong><small>默认关闭；开启后预览中会明确列出将删除的卡片。</small></span>
+        </label>
+        <div class="panel-actions">
+          <button class="preview-button primary-button" type="button">预览场景变化</button>
+          <button class="apply-button danger-button" type="button" disabled>确认应用</button>
+        </div>
+        <p class="panel-status">尚未选择文件。</p>
+        <div class="preview-result" hidden></div>
+      </section>
+
+      <section class="update-panel" data-kind="artist">
+        <header><div><p class="eyebrow">ARTIST STRINGS</p><h2>更新画师串</h2></div><span>只影响画师串库</span></header>
+        <label class="document-picker">选择画师串 DOCX / Markdown
+          <input class="document-input" type="file" accept=".docx,.md,.markdown,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/markdown">
+        </label>
+        <label class="delete-option">
+          <input class="delete-missing" type="checkbox">
+          <span><strong>同步删除文件中未出现的画师串</strong><small>不会把“负面提示词”子目录当成缺失资料。</small></span>
+        </label>
+        <div class="panel-actions">
+          <button class="preview-button primary-button" type="button">预览画师串变化</button>
+          <button class="apply-button danger-button" type="button" disabled>确认应用</button>
+        </div>
+        <p class="panel-status">尚未选择文件。</p>
+        <div class="preview-result" hidden></div>
+      </section>
+    </div>
+  </main>
+  <script src="/static/converter.js?v=2026.08.29.1"></script>
+</body>
+</html>

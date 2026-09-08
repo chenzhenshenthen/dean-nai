@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+data/library.db
+data/library.db-shm
+data/library.db-wal
+data/media/**
+data/thumbs/**
+data/uploads/**
+backups/
+nai.docx
+nai提示词.docx
