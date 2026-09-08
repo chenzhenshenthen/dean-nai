@@ -1,5 +1,13 @@
 # Changelog
 
+## v2.0.0-preview.2 - 2026-09-08
+
+### Included
+
+- Self-contained Windows x64 ZIP with the desktop launcher, bundled Python backend, and desktop web resources.
+- No Python or Node.js installation is required for release-package users.
+- SHA-256 checksum published alongside the Windows ZIP.
+
 ## v2.0.0-preview.1 - 2026-09-08
 
 First curated public source preview based on the current Windows desktop version.

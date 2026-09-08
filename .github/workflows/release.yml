@@ -1,4 +1,4 @@
-name: Publish source release
+name: Publish Windows release
 
 on:
   push:
@@ -9,13 +9,39 @@ permissions:
 
 jobs:
   release:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v7
-      - name: Create GitHub release
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: deanai/package-lock.json
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: |
+            nai-artist-library/requirements.txt
+            desktop_launcher/requirements.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install -r nai-artist-library\requirements.txt
+          python -m pip install -r desktop_launcher\requirements.txt
+          npm ci --prefix deanai
+      - name: Build Windows package
+        shell: pwsh
+        run: .\desktop_launcher\build-release.ps1 -Version $env:GITHUB_REF_NAME
+      - name: Create GitHub release with Windows package
+        shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          args=()
-          if [[ "$GITHUB_REF_NAME" == *-* ]]; then args+=(--prerelease); fi
-          gh release create "$GITHUB_REF_NAME" --verify-tag --generate-notes --title "$GITHUB_REF_NAME" "${args[@]}"
+          $releaseFiles = Get-ChildItem -LiteralPath release-dist -File |
+            Where-Object { $_.Name -like '*.zip' -or $_.Name -like '*.sha256' } |
+            ForEach-Object { $_.FullName }
+          if ($releaseFiles.Count -ne 2) { throw "Expected one ZIP and one SHA-256 file." }
+          $releaseArgs = @('release', 'create', $env:GITHUB_REF_NAME, '--verify-tag', '--generate-notes', '--title', $env:GITHUB_REF_NAME)
+          if ($env:GITHUB_REF_NAME -like '*-*') { $releaseArgs += '--prerelease' }
+          $releaseArgs += $releaseFiles
+          & gh @releaseArgs

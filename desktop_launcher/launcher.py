@@ -74,11 +74,12 @@ def find_project_root() -> Path:
             if candidate in checked:
                 continue
             checked.add(candidate)
+            backend_dir = candidate / "nai-artist-library"
             if (candidate / "deanai" / "desktop-web-dist" / "index.html").is_file() and (
-                candidate / "nai-artist-library" / "app.py"
-            ).is_file():
+                (backend_dir / "dean-nai-backend.exe").is_file() or (backend_dir / "app.py").is_file()
+            ):
                 return candidate
-    raise RuntimeError("找不到桌面版文件。请把 dean-nai.exe 放在项目根目录，并先运行桌面构建脚本。")
+    raise RuntimeError("找不到桌面版运行文件。请完整解压发布包后再启动 dean-nai.exe。")
 
 
 def page_contains(url: str, marker: str, timeout: float = 1.5) -> bool:
@@ -109,21 +110,36 @@ def stop_process_tree(process: subprocess.Popen[str]) -> None:
         process.terminate()
 
 
+def backend_command(root: Path) -> tuple[list[str], Path]:
+    backend_dir = root / "nai-artist-library"
+    bundled_backend = backend_dir / "dean-nai-backend.exe"
+    if bundled_backend.is_file():
+        return [str(bundled_backend)], backend_dir
+    python = shutil.which("python")
+    if not python:
+        raise RuntimeError("源码运行需要 Python 3；普通用户请下载并完整解压 Windows 发布包。")
+    return [python, "app.py"], backend_dir
+
+
 def start_backend(root: Path, log_dir: Path, run_id: str) -> tuple[subprocess.Popen[str], object]:
     if page_contains(APP_URL, "dean-nai"):
         raise RuntimeError("端口 5179 已有 dean-nai 在运行。请直接用浏览器打开，或先关闭旧实例。")
     if port_open(5179):
         raise RuntimeError("端口 5179 被其他程序占用，请关闭占用程序后重试。")
-    python = shutil.which("python")
-    if not python:
-        raise RuntimeError("PATH 中找不到 Python 3。")
+    command, backend_dir = backend_command(root)
     log_handle = (log_dir / "nai-artist-library.log").open("a", encoding="utf-8", buffering=1)
     log_handle.write(f"[{datetime.now().isoformat(timespec='milliseconds')}] [run:{run_id}] [launcher] desktop backend starting\n")
     environment = os.environ.copy()
-    environment.update({"NYA_UNIFIED_DESKTOP": "1", "NAI_LIBRARY_NO_BROWSER": "1", "NAI_LIBRARY_PORT": "5179"})
+    environment.update({
+        "NYA_UNIFIED_DESKTOP": "1",
+        "NAI_LIBRARY_NO_BROWSER": "1",
+        "NAI_LIBRARY_PORT": "5179",
+        "DEAN_NAI_LIBRARY_ROOT": str(backend_dir),
+        "DEAN_DESKTOP_WEB_DIR": str(root / "deanai" / "desktop-web-dist"),
+    })
     process = subprocess.Popen(
-        [python, "app.py"],
-        cwd=root / "nai-artist-library",
+        command,
+        cwd=backend_dir,
         env=environment,
         stdout=log_handle,
         stderr=subprocess.STDOUT,

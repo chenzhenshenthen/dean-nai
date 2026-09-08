@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import sqlite3
 import unicodedata
@@ -10,7 +11,7 @@ from pathlib import Path
 from threading import Lock
 
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(os.environ.get("DEAN_NAI_LIBRARY_ROOT") or Path(__file__).resolve().parent).resolve()
 DATA_DIR = ROOT / "data"
 ORIGINALS_DIR = DATA_DIR / "media"
 DB_PATH = DATA_DIR / "library.db"

@@ -4,15 +4,15 @@
 
 它把生图、画师串与场景提示词资料库、可选外置资料接口、Danbooru 标签词库、本地画廊、在线画廊和生成统计整合在同一个项目中。项目不会把私人资料、生成图片或 NovelAI Token 上传到 Git。
 
-> 本项目是非官方个人工具，与 NovelAI、Anlatan 或任何外置资料来源没有隶属、授权、认可或合作关系。公开版本不附带、推荐或代为获取任何外置资料及来源地址。
+> 本项目是非官方个人工具，与 NovelAI或任何外置资料来源没有隶属、授权、认可或合作关系。公开版本不附带、推荐或代为获取任何外置资料及来源地址。
 
 ## 当前版本
 
-本仓库提供 Windows 桌面应用源码。当前 GitHub Release 为源码预览，不包含预构建的 exe 或安装包；可以按下方“快速开始”在 Windows 10/11 上构建运行。
+在 [Releases](https://github.com/chenzhenshenthen/dean-nai/releases) 下载 Windows x64 ZIP，完整解压后双击 `dean-nai.exe` 即可运行，不需要安装 Node.js 或 Python。源码仍可按下方步骤自行构建。
 
 桌面版采用常驻工作区：切换生图、资料库、画廊和设置时，已经打开的页面不会反复卸载，因此输入内容、滚动位置和展开状态可以保留。
 
-`dean-nai.exe` 是项目本地启动器，不是包含全部源码和数据的独立安装包。它会使用当前目录中的 `deanai/desktop-web-dist`、Python 源码和本地数据库。只从 Git 获取源码时，需要构建一次，因为 exe 和网页构建产物不进 Git；如果复制了完整的可运行目录，则通常可以沿用 exe，在新电脑安装 Python、后端依赖及 WebView2 运行环境即可。
+发布 ZIP 同时包含桌面启动器、内置 Python 后端和网页资源，因此必须完整解压，不能只复制 `dean-nai.exe`。数据库、图片、Token、日志和桌面浏览器状态会在解压目录中首次运行时创建，不包含在原始发布包中。
 
 ## 主要功能
 
@@ -157,6 +157,14 @@ Token 输入支持显示/隐藏和清理后字符数提示；粘贴及保存时�
 
 ## 快速开始
 
+### 下载 Windows 版
+
+1. 打开 [Releases](https://github.com/chenzhenshenthen/dean-nai/releases)，下载名称以 `windows-x64.zip` 结尾的文件。
+2. 完整解压 ZIP。
+3. 双击目录中的 `dean-nai.exe`。
+
+Windows 10/11 通常已经包含 Microsoft Edge WebView2 Runtime；如果系统提示缺少 WebView2，请安装微软官方运行时后重试。Windows SmartScreen 可能因为程序暂未进行商业代码签名而显示“未知发布者”。
+
 ### 从源码构建 Windows 桌面版
 
 环境要求：
@@ -178,6 +186,12 @@ powershell -ExecutionPolicy Bypass -File desktop_launcher\build-desktop.ps1
 ```
 
 构建成功后会生成根目录 `dean-nai.exe`。运行时只监听 `127.0.0.1:5179`，不会自动开放给局域网。exe、构建产物、数据库和私人资料均被 `.gitignore` 排除。
+
+生成无需用户安装 Python 或 Node.js 的完整发布 ZIP：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File desktop_launcher\build-release.ps1 -Version local
+```
 
 ### 浏览器开发模式
 

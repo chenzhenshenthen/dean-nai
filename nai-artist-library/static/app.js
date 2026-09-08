@@ -1,4 +1,4 @@
-const EXPECTED_BACKEND_VERSION = "2026.09.06.1";
+const EXPECTED_BACKEND_VERSION = "2026.09.08.1";
 const state = { kind: "prompt", q: "", searchScope: "all", searchField: "all", category: "", categoryPrefix: "", groupId: null, imageFilter: "", viewMode: "card", viewColumns: 3, ratingMin: "", ratingMax: "", ratingUnrated: false, style: "", styleUnclassified: false, artistClassificationView: "rating-first", favoritesOnly: false, sort: "title", batchSize: 30, offset: 0, total: 0, loading: false, hasMore: true, selectionMode: false, selectedIds: new Set(), entries: [], imageList: [], imageIndex: 0, viewerEntry: null };
 const groupsByKind = { artist: [], prompt: [] };
 const categoriesByKind = { artist: [], prompt: [] };

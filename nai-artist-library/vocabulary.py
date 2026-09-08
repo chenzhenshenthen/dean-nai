@@ -10,8 +10,8 @@ from threading import Lock
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import unpad
 
+from database import ROOT
 
-ROOT = Path(__file__).resolve().parent
 DEFAULT_TAG_DIR = ROOT.parent / "tags"
 PASSPHRASE = b"a-very-secret-key-that-is-not-so-secret"
 INDEX_LOCK = Lock()

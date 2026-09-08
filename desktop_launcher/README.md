@@ -2,7 +2,7 @@
 
 `desktop_launcher/` 负责把当前项目目录中的 Flask 服务和 `deanai/desktop-web-dist` 打开为一个 pywebview 桌面程序。
 
-根目录 `dean-nai.exe` 是项目本地启动器，不是包含前端、Python 服务和私人数据库的独立安装包。它必须与当前源码目录配套使用。从 Git 首次获取源码时需要构建；复制完整程序目录到另一台 Windows 电脑时，通常可沿用 exe，但仍须安装 Python、后端依赖及 WebView2 运行环境。
+公开发布 ZIP 包含桌面启动器、内置 Python 后端和 `desktop-web-dist`，用户完整解压后即可运行，不需要自行安装 Python 或 Node.js。根目录单独生成的 `dean-nai.exe` 仍只是启动器，不能离开配套目录独立工作。
 
 完整构建：
 
@@ -27,8 +27,16 @@ powershell -ExecutionPolicy Bypass -File desktop_launcher\build-desktop.ps1 -Ski
 dean-nai.exe
 ```
 
+构建完整 Windows x64 发布包：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File desktop_launcher\build-release.ps1 -Version v2.0.0-preview.2
+```
+
+输出位于 `release-dist/`，包括发布 ZIP 和对应的 SHA-256 校验文件。发布包不包含数据库、图片、Token、日志、缓存或其他私人资料。
+
 运行时只监听 `127.0.0.1:5179`。Flask 同时提供桌面静态页面、本地资料库、外置资料库、标签词库、本地画廊、在线画廊、设置和导出 API；pywebview 直接打开这个本机 HTTP Origin，使浏览器存储在多次启动之间保持稳定。
 
-`start-local.bat` 是独立的浏览器开发启动方式，桌面 exe 不会调用它。
+源码目录没有内置后端 exe 时，启动器仍会使用系统 Python 运行后端；公开发布包则优先使用随包附带的后端 exe。`start-local.bat` 是独立的浏览器开发启动方式，桌面 exe 不会调用它。
 
 更多说明见项目根目录 [`README.md`](../README.md)。

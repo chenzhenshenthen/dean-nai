@@ -63,7 +63,7 @@ from vocabulary_sync import (
 
 app = Flask(__name__, static_folder="static", static_url_path="/static")
 app.config["MAX_CONTENT_LENGTH"] = 512 * 1024 * 1024
-APP_VERSION = "2026.09.06.1"
+APP_VERSION = "2026.09.08.1"
 MEDIA_CLEANUP_PREVIEWS: dict[str, tuple[float, dict]] = {}
 MAINTENANCE_LOCK = Lock()
 BACKUP_DIR = ROOT / "backups"
